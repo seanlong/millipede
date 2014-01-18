@@ -1,7 +1,7 @@
-#include "clawer_driver/clawer_driver_browser_client.h"
+#include "clawer_driver/src/clawer_driver_browser_client.h"
 
 #include "content/public/common/main_function_params.h"
-#include "clawer_driver/clawer_driver_browser_main_parts.h"
+#include "clawer_driver/src/clawer_driver_browser_main_parts.h"
 #include "content/public/browser/browser_context.h"
 #include "content/shell/browser/shell_browser_context.h"
 

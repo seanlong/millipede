@@ -1,4 +1,4 @@
-#include "clawer_driver/clawer_driver_renderer_client.h"
+#include "clawer_driver/src/clawer_driver_renderer_client.h"
 
 #include "base/strings/utf_string_conversions.h"
 #include "content/public/renderer/render_view.h"

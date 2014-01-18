@@ -2,7 +2,7 @@
 #define CLAWER_DRIVER_CLAWER_DRIVER_BROWSER_MAIN_PARTS_H_
 
 #include "base/memory/scoped_ptr.h"
-#include "clawer_driver/clawer_web_contents_observer.h"
+#include "clawer_driver/src/clawer_web_contents_observer.h"
 #include "content/shell/browser/shell_browser_main_parts.h"
 
 namespace {
