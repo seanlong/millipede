@@ -13,13 +13,13 @@ class ExportedObject;
 class MethodCall;
 }
 
+class ClawerDriverBrowserMainParts;
+
 class ClawerDriverService : public base::Thread {
  public:
-  ClawerDriverService();
+  explicit ClawerDriverService(ClawerDriverBrowserMainParts* main_parts);
   ~ClawerDriverService();
   
-  void SetHTML(const base::Value*);
-
  private:
   virtual void Run(base::MessageLoop* message_loop) OVERRIDE;
   virtual void CleanUp() OVERRIDE;
@@ -32,6 +32,10 @@ class ClawerDriverService : public base::Thread {
   void GetHTML(dbus::MethodCall* method_call,
                dbus::ExportedObject::ResponseSender response_sender);
 
+  void ReturnHTML(dbus::MethodCall* method_call,
+                  dbus::ExportedObject::ResponseSender response_sender,
+                  const base::string16& html_str);
+
   void OnOwnerShip(const std::string& service_name, bool success);
 
   void OnExported(const std::string& interface_name,
@@ -40,7 +44,8 @@ class ClawerDriverService : public base::Thread {
 
   dbus::Bus* bus_;
   dbus::ExportedObject* exported_object_;
-  base::string16 html_; 
+
+  ClawerDriverBrowserMainParts* main_parts_;
 };
 
 #endif

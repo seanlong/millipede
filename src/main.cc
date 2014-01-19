@@ -10,12 +10,9 @@
 // browser process:[get html for url Dbus] -> service -> load url -> finish loading 
 // -> RVH execute js to get html -> callback to service -> service callback on DBus
 
-ClawerDriverService* g_service;
-
 int main(int argc, const char** argv)
 {
-  //TODO remove this
-  g_service = new ClawerDriverService();
+  //g_service = new ClawerDriverService();
   //base::PlatformThread::Join(g_service->thread_handle());
   ClawerDriverMainDelegate delegate;
   return content::ContentMain(argc, argv, &delegate);

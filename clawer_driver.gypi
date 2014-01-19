@@ -35,6 +35,8 @@
         '..',
       ],
       'sources': [
+        'src/clawer.cc',
+        'src/clawer.h',
         'src/clawer_driver_browser_client.cc',
         'src/clawer_driver_browser_client.h',
         'src/clawer_driver_browser_main_parts.cc',
@@ -45,8 +47,8 @@
         'src/clawer_driver_renderer_client.h',
         'src/clawer_driver_service.cc',
         'src/clawer_driver_service.h',
-        'src/clawer_web_contents_observer.cc',
-        'src/clawer_web_contents_observer.h',
+        'src/clawer_manager.cc',
+        'src/clawer_manager.h',
         'src/main.cc',
       ],
     }

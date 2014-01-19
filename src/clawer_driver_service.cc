@@ -1,14 +1,22 @@
 #include "clawer_driver/src/clawer_driver_service.h"
 
 #include "base/strings/utf_string_conversions.h"
+#include "clawer_driver/src/clawer.h"
+#include "clawer_driver/src/clawer_driver_browser_main_parts.h"
+#include "clawer_driver/src/clawer_manager.h"
+#include "content/public/browser/browser_thread.h"
 #include "dbus/bus.h"
 #include "dbus/message.h"
 #include "dbus/object_manager.h"
 #include "dbus/object_path.h"
 #include "dbus/property.h"
 
-ClawerDriverService::ClawerDriverService()
-  : base::Thread("Download service thread") {
+using content::BrowserThread;
+
+ClawerDriverService::ClawerDriverService(
+    ClawerDriverBrowserMainParts* main_parts)
+  : base::Thread("Download service thread"),
+    main_parts_(main_parts) {
   /*
   const CommandLine& command_line = *CommandLine::ForCurrentProcess();
   std::string process_type =
@@ -79,17 +87,38 @@ void ClawerDriverService::Echo(
 void ClawerDriverService::GetHTML(
     dbus::MethodCall* method_call,
     dbus::ExportedObject::ResponseSender response_sender) {
+  dbus::MessageReader reader(method_call);
+  std::string url;
+  if (!reader.PopString(&url)) {
+    response_sender.Run(scoped_ptr<dbus::Response>());
+    return;
+  }
+
+  LOG(INFO) << "Get message:" << url;
+
+  Clawer::GetHTMLCallback callback =
+    base::Bind(&ClawerDriverService::ReturnHTML,
+               base::Unretained(this),
+               method_call,
+               response_sender);              
   
+  BrowserThread::PostTask(BrowserThread::UI,
+      FROM_HERE,
+      base::Bind(&ClawerManager::GetHTMLFromNewClawer,
+                 base::Unretained(main_parts_->GetClawerManager()),
+                 url,
+                 callback));
+}
+
+void ClawerDriverService::ReturnHTML(
+    dbus::MethodCall* method_call,
+    dbus::ExportedObject::ResponseSender response_sender,
+    const base::string16& html_str) {
   scoped_ptr<dbus::Response> response =
     dbus::Response::FromMethodCall(method_call);
   dbus::MessageWriter writer(response.get());
-  writer.AppendString(UTF16ToUTF8(html_));
+  writer.AppendString(UTF16ToUTF8(html_str));
   response_sender.Run(response.Pass());
-}
-
-void ClawerDriverService::SetHTML(const base::Value* html) {
-  html->GetAsString(&html_);
-  LOG(INFO) << __LINE__;
 }
 
 void ClawerDriverService::OnOwnerShip(const std::string& service_name,
