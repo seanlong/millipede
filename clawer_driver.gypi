@@ -49,6 +49,8 @@
         'src/clawer_driver_service.h',
         'src/clawer_manager.cc',
         'src/clawer_manager.h',
+        'src/service_clawer_manager_auto.cc',
+        'src/service_clawer_manager_auto.h',
         'src/main.cc',
       ],
     }
