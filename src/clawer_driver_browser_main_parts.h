@@ -2,7 +2,7 @@
 #define CLAWER_DRIVER_CLAWER_DRIVER_BROWSER_MAIN_PARTS_H_
 
 #include "base/memory/scoped_ptr.h"
-#include "clawer_driver/src/clawer_driver_service.h"
+#include "clawer_driver/src/service/clawer_driver_service.h"
 #include "clawer_driver/src/clawer_manager.h"
 #include "content/shell/browser/shell_browser_context.h"
 #include "content/shell/browser/shell_browser_main_parts.h"
@@ -21,6 +21,9 @@ class ClawerDriverBrowserMainParts: public content::ShellBrowserMainParts {
   // ShellBrowserMainParts
   virtual void PreMainMessageLoopRun() OVERRIDE;
   virtual bool MainMessageLoop(int* result_code) OVERRIDE;
+
+  void CreateAutoManger(const base::Closure& callback);
+  void CreateManualManager(const base::Closure& callback);
 
   // Getters
   content::ShellBrowserContext* browser_context();

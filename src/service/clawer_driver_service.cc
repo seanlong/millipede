@@ -1,10 +1,10 @@
-#include "clawer_driver/src/clawer_driver_service.h"
+#include "clawer_driver/src/service/clawer_driver_service.h"
 
 #include "base/strings/utf_string_conversions.h"
 #include "clawer_driver/src/clawer.h"
 #include "clawer_driver/src/clawer_driver_browser_main_parts.h"
 #include "clawer_driver/src/clawer_manager.h"
-#include "clawer_driver/src/service_clawer_manager_auto.h"
+#include "clawer_driver/src/service/service_clawer_manager_auto.h"
 #include "content/public/browser/browser_thread.h"
 #include "dbus/bus.h"
 #include "dbus/message.h"
@@ -27,13 +27,7 @@ const char kClawerManagerError[] = "org.seanlong.ClawerDriver.Manager.Error";
 ClawerDriverService::ClawerDriverService(
     ClawerDriverBrowserMainParts* main_parts)
   : base::Thread("ClawerService thread"),
-    main_parts_(main_parts) {
-  /*
-  const CommandLine& command_line = *CommandLine::ForCurrentProcess();
-  std::string process_type =
-    command_line.GetSwitchValueASCII(switches::kProcessType);
-  LOG(INFO) << process_type;
-  */
+    ServiceObject(main_parts) {
   base::Thread::Options thread_options;
   thread_options.message_loop_type = base::MessageLoop::TYPE_IO;
   StartWithOptions(thread_options);
@@ -49,8 +43,7 @@ void ClawerDriverService::Run(base::MessageLoop* message_loop) {
                          dbus::Bus::REQUIRE_PRIMARY,
                          base::Bind(&ClawerDriverService::OnOwnerShip,
                                     base::Unretained(this)));
-  exported_object_ = bus_->GetExportedObject(
-      dbus::ObjectPath("/Manager"));
+  exported_object_ = bus_->GetExportedObject(dbus::ObjectPath("/Manager"));
 
   // Test echo method.
   exported_object_->ExportMethod(
@@ -74,6 +67,18 @@ void ClawerDriverService::Run(base::MessageLoop* message_loop) {
 
 void ClawerDriverService::CleanUp() {
   LOG(INFO) << __LINE__;
+}
+
+void ClawerDriverService::CreateBus() {
+  base::Thread::Options thread_options;
+  thread_options.message_loop_type = base::MessageLoop::TYPE_IO;
+  std::string thread_name = "D-Bus thread";
+  base::Thread* dbus_thread = new base::Thread(thread_name.c_str());
+  dbus_thread->StartWithOptions(thread_options);
+
+  dbus::Bus::Options options;
+  options.dbus_task_runner = dbus_thread->message_loop_proxy();
+  bus_ = new dbus::Bus(options);
 }
 
 void ClawerDriverService::Echo(
@@ -100,45 +105,31 @@ void ClawerDriverService::SetMode(
   dbus::MessageReader reader(method_call);
   std::string mode_str;
   if (!reader.PopString(&mode_str)) {
-    scoped_ptr<dbus::ErrorResponse> error = dbus::ErrorResponse::FromMethodCall(
-            method_call, kClawerManagerError, "No mode string");
-    response_sender.Run(error.PassAs<dbus::Response>());
+    SendErrorResponse(method_call, response_sender,
+                      kClawerManagerError, "No mode string");
     return;
   }
 
+  // FIXME We don't support switch between service modes at the moment.
+  if (manager_service_.get()) {
+    response_sender.Run(dbus::Response::FromMethodCall(method_call).Pass());
+    return;
+  }
+    
   LOG(INFO) << "Get message:" << mode_str;
   if (mode_str == "auto") {
-    manager_.reset(
-        new ServiceClawerManagerAuto(this, main_parts_, exported_object_));
-    manager_->Init();
+    manager_service_.reset(
+        new ServiceClawerManagerAuto(main_parts_, exported_object_));
     response_sender.Run(dbus::Response::FromMethodCall(method_call).Pass());
   } else {
     // manual mode not support yet.
-    scoped_ptr<dbus::ErrorResponse> error = dbus::ErrorResponse::FromMethodCall(
-            method_call, kClawerManagerError, "No valid mode string");
-    response_sender.Run(error.PassAs<dbus::Response>());
+    SendErrorResponse(method_call, response_sender,
+                      kClawerManagerError, "Invalid mode string");
   }
 }
 
 void ClawerDriverService::OnOwnerShip(const std::string& service_name,
-                                  bool success) {
+                                      bool success) {
   LOG(INFO) << service_name << ": " << success;
 }
 
-void ClawerDriverService::OnExported(const std::string& interface_name,
-                                 const std::string& method_name,
-                                 bool success) {
-  LOG(INFO) << interface_name << " " << method_name << " " << success;
-}
-
-void ClawerDriverService::CreateBus() {
-  base::Thread::Options thread_options;
-  thread_options.message_loop_type = base::MessageLoop::TYPE_IO;
-  std::string thread_name = "D-Bus thread";
-  base::Thread* dbus_thread = new base::Thread(thread_name.c_str());
-  dbus_thread->StartWithOptions(thread_options);
-
-  dbus::Bus::Options options;
-  options.dbus_task_runner = dbus_thread->message_loop_proxy();
-  bus_ = new dbus::Bus(options);
-}

@@ -3,35 +3,44 @@
 #include "base/strings/utf_string_conversions.cc"
 #include "content/public/browser/render_view_host.h"
 
-Clawer* Clawer::Create(
-    content::BrowserContext* context, const std::string& url_str) {
-  LOG(INFO) << context;
-  LOG(INFO) << url_str;
+Clawer* Clawer::Create(content::BrowserContext* context, const GURL& url) {
   content::WebContents* web_contents = content::WebContents::Create(
         content::WebContents::CreateParams(context, NULL));
-  return new Clawer(url_str, web_contents);
+  return new Clawer(url, web_contents);
 }
 
-Clawer::Clawer(const std::string& url_str, content::WebContents* web_contents)
+Clawer::Clawer(const GURL& url, content::WebContents* web_contents)
   : WebContentsObserver(web_contents),
     id_(-1),
+    is_idle_(false),
     is_load_finish_(false),
-    start_url_(url_str),
+    start_url_(url),
     web_contents_(web_contents) {
   CHECK(start_url_.is_valid());
-  content::NavigationController::LoadURLParams params(start_url_);
-  params.transition_type = content::PageTransitionFromInt(
-      content::PAGE_TRANSITION_TYPED |
-      content::PAGE_TRANSITION_FROM_ADDRESS_BAR);
-  web_contents_->GetController().LoadURLWithParams(params);
+  LoadURL(start_url_);
 }
 
 Clawer::~Clawer() {
   LOG(INFO) << __LINE__;
 }
 
+void Clawer::LoadURL(const GURL& url) {
+  content::NavigationController::LoadURLParams params(url);
+  params.transition_type = content::PageTransitionFromInt(
+      content::PAGE_TRANSITION_TYPED |
+      content::PAGE_TRANSITION_FROM_ADDRESS_BAR);
+  web_contents_->GetController().LoadURLWithParams(params);
+}
+
+void Clawer::AddObserver(Observer* obs) {
+  observer_list_.AddObserver(obs);
+}
+
+void Clawer::RemoveObserver(Observer* obs) {
+  observer_list_.RemoveObserver(obs);
+}
+
 void Clawer::GetHTML(const GetHTMLCallback& callback) {
-  LOG(INFO) << __LINE__;
   if (!is_load_finish_) {
     load_finish_callback_.reset(new base::Closure(
         base::Bind(&Clawer::GetHTML, base::Unretained(this), callback)));
@@ -53,6 +62,14 @@ void Clawer::ConvertHTMLStrToCallback(
   base::string16 html_str;
   html_value->GetAsString(&html_str);
   callback.Run(html_str);
+}
+
+void Clawer::ReloadURL(const GURL& new_url) {
+  CHECK(new_url.is_valid());
+  start_url_ = new_url;
+  is_load_finish_ = false;
+  is_idle_ = false;
+  LoadURL(new_url);
 }
 
 void Clawer::ExecuteJS(const base::string16& js) {
@@ -92,6 +109,10 @@ void Clawer::DidFinishLoad(int64 frame_id,
     LOG(INFO) << __LINE__;
     return;
   }
+
+  // FIXME is_idle_ could be set to FALSE when manual mode acquire a clawer.
+  is_idle_ = true;
+  FOR_EACH_OBSERVER(Observer, observer_list_, OnClawerIdle(this));
 
   is_load_finish_ = true;
   if (load_finish_callback_.get())

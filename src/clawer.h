@@ -3,6 +3,7 @@
 
 #include "base/bind.h"
 #include "base/memory/scoped_ptr.h"
+#include "base/observer_list.h"
 #include "content/public/browser/web_contents.h"
 #include "content/public/browser/web_contents_delegate.h"
 #include "content/public/browser/web_contents_observer.h"
@@ -10,10 +11,9 @@
 class Clawer : public content::WebContentsDelegate,
                public content::WebContentsObserver {
  public:
-  static Clawer* Create(
-      content::BrowserContext* context, const std::string& url_str);
+  static Clawer* Create(content::BrowserContext* context, const GURL& url);
 
-  Clawer(const std::string& url_str, content::WebContents* web_contents);
+  Clawer(const GURL& url, content::WebContents* web_contents);
   ~Clawer();
  
   // Getter
@@ -21,10 +21,21 @@ class Clawer : public content::WebContentsDelegate,
   const GURL& GetURL() const { return web_contents_->GetURL(); }
   const GURL& GetStartURL() const { return start_url_; }
   int GetID() const { return id_; }
+  bool IsIdle() const { return is_idle_; }
 
-  // Clawer API
+  class Observer {
+   public:
+    virtual void OnClawerIdle(Clawer* clawer) = 0;
+    virtual ~Observer() {}
+  };
+
+  void AddObserver(Observer* obs);
+  void RemoveObserver(Observer* obs);
+
   typedef base::Callback<void(const base::string16&)> GetHTMLCallback;
   void GetHTML(const GetHTMLCallback& callback);
+
+  void ReloadURL(const GURL& new_url);
   
   void ExecuteJS(const base::string16& js);
 
@@ -51,13 +62,21 @@ class Clawer : public content::WebContentsDelegate,
  private:
   friend class ClawerManager;
 
+  void LoadURL(const GURL& url);
+
   void ConvertHTMLStrToCallback(
       const GetHTMLCallback& callback, const base::Value* html_value);
 
   int id_;
+  
+  bool is_idle_;
   bool is_load_finish_;
+
+  ObserverList<Observer> observer_list_;
+
   GURL start_url_;
   scoped_ptr<content::WebContents> web_contents_;
+
   scoped_ptr<base::Closure> load_finish_callback_;
 };
 

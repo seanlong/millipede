@@ -10,26 +10,26 @@ class ClawerDriverBrowserMainParts;
 
 class ClawerManager {
  public:
-  explicit ClawerManager(ClawerDriverBrowserMainParts* main_parts);
   ~ClawerManager();
 
-  // Higher level clawing API
-  void GetHTMLFromNewClawer(
-      const std::string& url, Clawer::GetHTMLCallback callback);
+ protected:
+  explicit ClawerManager(ClawerDriverBrowserMainParts* main_parts);
 
-  // Clawer API
+  // Common clawer API
   linked_ptr<Clawer> GetClawerByID(int id);
-  
-  linked_ptr<Clawer> CreateClawer(const std::string& url);
+
+  linked_ptr<Clawer> CreateClawer(const GURL& url);
 
   void RemoveClawer(Clawer* clawer);
+
   void RemoveAllClawers();
 
- private:
   typedef std::map<int, linked_ptr<Clawer> > ClawerMap;
   ClawerMap clawers_;
+
   ClawerDriverBrowserMainParts* main_parts_;
 
+ private:
   int clawer_idx_;
 };
 

@@ -11,6 +11,6 @@ namespace {
 //   RemoveClawer(int id) -> void
 //     "remove a clawer by its ID"
 const char kClawerManagerManualModeInterface[] =
-  "org.seanlong.ClawerDriver.Manager.ManualMode";
+  "org.seanlong.ClawerDriver.Manager.Manual";
 
 }

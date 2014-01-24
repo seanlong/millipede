@@ -1,6 +1,5 @@
 #include "clawer_driver/src/clawer_manager.h"
 
-#include "clawer_driver/src/clawer.h"
 #include "clawer_driver/src/clawer_driver_browser_main_parts.h"
 #include "content/shell/browser/shell_browser_context.h"
 
@@ -13,12 +12,6 @@ ClawerManager::~ClawerManager() {
   RemoveAllClawers();
 }
 
-void ClawerManager::GetHTMLFromNewClawer(
-    const std::string& url, Clawer::GetHTMLCallback callback) {
-  linked_ptr<Clawer> clawer = CreateClawer(url);
-  clawer->GetHTML(callback);
-}
-
 linked_ptr<Clawer> ClawerManager::GetClawerByID(int id) {
   ClawerMap::iterator it = clawers_.find(id);
   if (it == clawers_.end())
@@ -26,7 +19,7 @@ linked_ptr<Clawer> ClawerManager::GetClawerByID(int id) {
   return it->second;
 }
 
-linked_ptr<Clawer> ClawerManager::CreateClawer(const std::string& url) {
+linked_ptr<Clawer> ClawerManager::CreateClawer(const GURL& url) {
   linked_ptr<Clawer> clawer(
       Clawer::Create(main_parts_->browser_context(), url));
   clawer->id_ = ++clawer_idx_;
