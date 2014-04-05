@@ -8,6 +8,7 @@
 #include "third_party/WebKit/public/web/WebFrame.h"
 #include "third_party/WebKit/public/web/WebScriptSource.h"
 #include "third_party/WebKit/public/web/WebView.h"
+#include "third_party/WebKit/public/web/WebSettings.h"
 
 namespace {
 
@@ -18,8 +19,13 @@ void SendClawerMessage(const v8::FunctionCallbackInfo<v8::Value>& args) {
 
   // Send message to corresponding clawer to notify the retrieved data.
   client->render_view()->Send(new ClawerMessage_SendMsgToClawer(
-        client->render_view()->GetRoutingID(),
-        *(v8::String::Utf8Value(args[0]))));
+    client->render_view()->GetRoutingID(), *(v8::String::Utf8Value(args[0]))));
+
+  // FIXME profiled by perf, the renderer will cost CPU after running some
+  // script, the root cause is unknown, so let's temporarily disable the script
+  // running after this message.
+  // perf usage: www.chromium.org/developers/profiling-chromium-and-webkit 
+  client->render_view()->GetWebView()->settings()->setJavaScriptEnabled(false);
 }
 
 }

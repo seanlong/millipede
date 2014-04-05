@@ -43,7 +43,8 @@ ClawerDriverService::ClawerDriverService(ClawerManager* clawer_manager)
   : base::Thread("ClawerService thread"),
     clawer_manager_(clawer_manager) {
   base::Thread::Options thread_options;
-  thread_options.message_loop_type = base::MessageLoop::TYPE_IO; StartWithOptions(thread_options);
+  thread_options.message_loop_type =
+      base::MessageLoop::TYPE_IO; StartWithOptions(thread_options);
 }
 
 ClawerDriverService::~ClawerDriverService() {
