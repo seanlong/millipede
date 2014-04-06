@@ -1,0 +1,20 @@
+diff --git a/Source/core/page/FrameView.cpp b/Source/core/page/FrameView.cpp
+index 1339426..6368777 100644
+--- a/Source/core/page/FrameView.cpp
++++ b/Source/core/page/FrameView.cpp
+@@ -2878,6 +2878,7 @@ void FrameView::setWasScrolledByUser(bool wasScrolledByUser)
+
+ void FrameView::paintContents(GraphicsContext* p, const IntRect& rect)
+ {
++#if 0
+     Document* document = m_frame->document();
+
+ #ifndef NDEBUG
+@@ -2964,6 +2965,7 @@ void FrameView::paintContents(GraphicsContext* p, const IntRect& rect)
+     }
+
+     InspectorInstrumentation::didPaint(renderView, p, rect);
++#endif
+ }
+
+ void FrameView::setPaintBehavior(PaintBehavior behavior)

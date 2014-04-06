@@ -1,0 +1,17 @@
+diff --git a/content/content.gyp b/content/content.gyp
+index 221a1a5..7202738 100644
+--- a/content/content.gyp
++++ b/content/content.gyp
+@@ -31,6 +31,12 @@
+         'content_shell.gypi',
+       ],
+     }],
++    ['OS=="linux"', {
++      'includes': [
++        '../clawer_driver/clawer_driver.gypi',
++      ],
++    }],
++
+     # In component mode, we build all of content as a single DLL.
+     # However, in the static mode, we need to build content as multiple
+     # targets in order to prevent dependencies from getting introduced
