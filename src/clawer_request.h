@@ -14,6 +14,8 @@ struct ClawerRequest {
       callback(callback) {
   }
 
+  ~ClawerRequest() {}
+
   const GURL url;
   const std::string js;
   const Callback callback;

@@ -5,6 +5,12 @@
 #include "clawer_driver/src/clawer_messages.h"
 #include "clawer_driver/src/clawer_request.h"
 #include "content/public/browser/render_view_host.h"
+#include "content/public/browser/render_process_host.h"
+
+//#define TEST_WITH_UI 1
+#if defined(TEST_WITH_UI)
+#include "content/shell/browser/shell.h"
+#endif
 
 
 Clawer* Clawer::Create(content::BrowserContext* context,
@@ -25,6 +31,9 @@ Clawer::Clawer(linked_ptr<ClawerRequest> request,
       web_contents_(web_contents) {
   CHECK(request_ != NULL);
   CHECK(request_->url.is_valid());
+#if defined(TEST_WITH_UI)
+  content::Shell::CreateShell(web_contents_.get(), gfx::Size(600, 400));
+#endif
   HandleRequest();
 }
 
@@ -41,12 +50,14 @@ void Clawer::RemoveObserver(Observer* obs) {
 }
 
 bool Clawer::IsIdle() const {
-  return request_ == NULL;
+  return !request_.get();
 }
 
 void Clawer::HandleRequest(linked_ptr<ClawerRequest> request) {
   if (request_ != NULL)
     LOG(WARNING) << "request received when clawer is not idle";
+
+  //LOG(INFO) << __LINE__ << " " << request->url.spec();
   request_ = request;
   did_finish_load_ = 0;
   HandleRequest();
@@ -81,17 +92,40 @@ void Clawer::WebContentsCreated(content::WebContents* source_contents,
 }
 
 void Clawer::RenderProcessGone(base::TerminationStatus status) {
+  LOG(INFO) << __LINE__;
+  SetClawerToIdle();
 }
 
 void Clawer::DidStopLoading(content::RenderViewHost* rvh) {
+  DCHECK(web_contents_ == content::WebContents::FromRenderViewHost(rvh));
+  if (web_contents_->GetURL() == GURL("about:blank"))
+      return;
+
+  did_finish_load_++;
+  if (dfl_callback_) {
+    dfl_callback_->Run();
+    // Currently the callbacks are only one-shot.
+    dfl_callback_.reset();
+  }
 }
 
 void Clawer::LoadURL(const GURL& url) {
-  content::NavigationController::LoadURLParams params(url);
-  params.transition_type = content::PageTransitionFromInt(
-      content::PAGE_TRANSITION_TYPED |
-      content::PAGE_TRANSITION_FROM_ADDRESS_BAR);
-  web_contents_->GetController().LoadURLWithParams(params);
+  // FIXME when RP is created let load the new url in renderer directly.
+  // Is there any BP C++ configuration to handle this?
+  if (web_contents_->GetRenderProcessHost()->HasConnection()) {
+    content::RenderViewHost* rvh = web_contents_->GetRenderViewHost();
+    std::string js_str = "window.location.href='";
+    js_str.append(url.spec());
+    js_str.append("'");
+    rvh->ExecuteJavascriptInWebFrame(
+        base::string16(), base::UTF8ToUTF16(js_str));
+  } else {
+    content::NavigationController::LoadURLParams params(url);
+    params.transition_type = content::PageTransitionFromInt(
+        content::PAGE_TRANSITION_TYPED |
+        content::PAGE_TRANSITION_FROM_ADDRESS_BAR);
+    web_contents_->GetController().LoadURLWithParams(params);
+  }
 }
 
 // We can't count on the first page's finish loading event to judge
@@ -100,16 +134,17 @@ void Clawer::DidFinishLoad(int64 frame_id,
                            const GURL& validated_url,
                            bool is_main_frame,
                            content::RenderViewHost* render_view_host) {
+#if 0
   if (!is_main_frame) {
     return;
   }
-
   did_finish_load_++;
   if (dfl_callback_) {
     dfl_callback_->Run();
     // Currently seems the callbacks are only one-shot.
     dfl_callback_.reset();
   }
+#endif
 }
 
 void Clawer::InjectClientJS() {

@@ -41,6 +41,7 @@ const char kClawerManagerError[] = "org.seanlong.ClawerDriver.Manager.Error";
 
 ClawerDriverService::ClawerDriverService(ClawerManager* clawer_manager)
   : base::Thread("ClawerService thread"),
+    dbus_message_loop_(NULL),
     clawer_manager_(clawer_manager) {
   base::Thread::Options thread_options;
   thread_options.message_loop_type =
@@ -52,6 +53,7 @@ ClawerDriverService::~ClawerDriverService() {
 }
 
 void ClawerDriverService::Run(base::MessageLoop* message_loop) {
+  dbus_message_loop_ = message_loop;
   CreateBus();
   bus_->RequestOwnership("org.seanlong.ClawerDriver",
                          dbus::Bus::REQUIRE_PRIMARY,
@@ -88,7 +90,6 @@ void ClawerDriverService::Run(base::MessageLoop* message_loop) {
 }
 
 void ClawerDriverService::CleanUp() {
-  LOG(INFO) << __LINE__;
 }
 
 void ClawerDriverService::CreateBus() {
@@ -159,8 +160,8 @@ void ClawerDriverService::GetHTML(
   std::string js_str;
   reader.PopString(&js_str);
 
-  LOG(INFO) << "Get message:" << url_str;
-  LOG(INFO) << "Get inject JS:" << js_str;
+  LOG(INFO) << "Get message from: " << url_str;
+  LOG(INFO) << "Get inject JS: " << js_str;
   ClawerRequest::Callback callback =
     base::Bind(&ClawerDriverService::ReturnHTML,
                base::Unretained(this), method_call, response_sender);
@@ -176,6 +177,16 @@ void ClawerDriverService::ReturnHTML(
     dbus::MethodCall* method_call,
     dbus::ExportedObject::ResponseSender response_sender,
     const std::string& html_str) {
+  if (dbus_message_loop_ != base::MessageLoop::current()) {
+    dbus_message_loop_->PostTask(
+        FROM_HERE,
+        base::Bind(&ClawerDriverService::ReturnHTML,
+                   base::Unretained(this),
+                   method_call, response_sender, html_str));
+    return;
+  }
+
+  CHECK(dbus_message_loop_ == base::MessageLoop::current());
   scoped_ptr<dbus::Response> response =
     dbus::Response::FromMethodCall(method_call);
   dbus::MessageWriter writer(response.get());

@@ -8,6 +8,10 @@
 #include "base/values.h"
 #include "dbus/exported_object.h"
 
+namespace base {
+class MessageLoop;
+}
+
 namespace dbus {
 class Bus;
 class MethodCall;
@@ -52,6 +56,7 @@ class ClawerDriverService : public base::Thread {
  
   dbus::Bus* bus_;
   dbus::ExportedObject* exported_object_;
+  base::MessageLoop* dbus_message_loop_;
   ClawerManager* clawer_manager_;
 };
 

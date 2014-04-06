@@ -6,7 +6,7 @@
 ClawerManager::ClawerManager(ClawerDriverBrowserMainParts* main_parts)
   : main_parts_(main_parts),
     clawer_id_counter_(0),
-    clawer_pool_max_(-1) {
+    clawer_pool_max_(2) {
 }
 
 ClawerManager::~ClawerManager() {
@@ -25,6 +25,7 @@ linked_ptr<Clawer> ClawerManager::CreateClawer(
   linked_ptr<Clawer> clawer(Clawer::Create(main_parts_->browser_context(),
                             request, ++clawer_id_counter_));
   clawers_.insert(std::make_pair(clawer->id(), clawer));
+  clawer->AddObserver(this);
   return clawer;
 }
 
@@ -46,17 +47,17 @@ void ClawerManager::GetHTMLFromIdleClawer(
       const GURL& url,
       const std::string& js,
       const ClawerRequest::Callback& callback) {
-  linked_ptr<Clawer> clawer;
+  Clawer* clawer = NULL;
   ClawerMap::iterator it = clawers_.begin();
   for (; it != clawers_.end(); ++it) {
     if(it->second->IsIdle()) {
-      clawer = it->second;
+      clawer = it->second.get();
       break;
     }
   }
 
   linked_ptr<ClawerRequest> new_request(new ClawerRequest(url, js, callback));
-  if (clawer.get()) {
+  if (clawer) {
     clawer->HandleRequest(new_request);
   } else {
     if (clawer_pool_max_ > 0 && int(clawers_.size()) == clawer_pool_max_)

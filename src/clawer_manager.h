@@ -10,7 +10,7 @@
 
 class ClawerDriverBrowserMainParts;
 
-class ClawerManager {
+class ClawerManager : public Clawer::Observer {
  public:
   explicit ClawerManager(ClawerDriverBrowserMainParts* main_parts);
   ~ClawerManager();
