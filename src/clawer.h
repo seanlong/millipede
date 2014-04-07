@@ -9,7 +9,6 @@
 #include "content/public/browser/web_contents_delegate.h"
 #include "content/public/browser/web_contents_observer.h"
 
-
 class ClawerRequest;
 
 class Clawer : public content::WebContentsDelegate,
@@ -72,7 +71,9 @@ class Clawer : public content::WebContentsDelegate,
   void InjectClientJS();
   void HandleRequestWithoutJS();
   void ConvertHTMLStrToCallback(const base::Value* html_value);
-  void SetClawerToIdle();
+  void SetIdle(bool is_idle);
+  void OnBusyTimeout();
+
 
   int id_;
   int did_finish_load_;

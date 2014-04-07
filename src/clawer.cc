@@ -34,6 +34,7 @@ Clawer::Clawer(linked_ptr<ClawerRequest> request,
 #if defined(TEST_WITH_UI)
   content::Shell::CreateShell(web_contents_.get(), gfx::Size(600, 400));
 #endif
+  SetIdle(false);
   HandleRequest();
 }
 
@@ -58,6 +59,7 @@ void Clawer::HandleRequest(linked_ptr<ClawerRequest> request) {
     LOG(WARNING) << "request received when clawer is not idle";
 
   //LOG(INFO) << __LINE__ << " " << request->url.spec();
+  SetIdle(false);
   request_ = request;
   did_finish_load_ = 0;
   HandleRequest();
@@ -93,7 +95,9 @@ void Clawer::WebContentsCreated(content::WebContents* source_contents,
 
 void Clawer::RenderProcessGone(base::TerminationStatus status) {
   LOG(INFO) << __LINE__;
-  SetClawerToIdle();
+  if (request_ != NULL)
+    request_->callback.Run("", ClawerRequest::TIMEOUT);
+  SetIdle(true);
 }
 
 void Clawer::DidStopLoading(content::RenderViewHost* rvh) {
@@ -172,15 +176,31 @@ void Clawer::HandleRequestWithoutJS() {
 void Clawer::ConvertHTMLStrToCallback(const base::Value* html_value) {
   std::string html_str;
   html_value->GetAsString(&html_str);
-  request_->callback.Run(html_str);
-  SetClawerToIdle();
+  request_->callback.Run(html_str, ClawerRequest::NOERROR);
+  SetIdle(true);
 }
 
-void Clawer::SetClawerToIdle() {
-  dfl_callback_.reset();
-  request_.reset();
-  did_finish_load_ = 0;
-  FOR_EACH_OBSERVER(Observer, observer_list_, OnClawerIdle(this));
+void Clawer::SetIdle(bool is_idle) {
+  if (is_idle) {
+    dfl_callback_.reset();
+    request_.reset();
+    did_finish_load_ = 0;
+    FOR_EACH_OBSERVER(Observer, observer_list_, OnClawerIdle(this));
+  } else {
+    base::MessageLoop::current()->PostDelayedTask(
+        FROM_HERE,
+        base::Bind(&Clawer::OnBusyTimeout, base::Unretained(this)),
+        base::TimeDelta::FromSeconds(60));
+  }
+}
+
+void Clawer::OnBusyTimeout() {
+  if (IsIdle())
+    return;
+
+  LOG(INFO) << __LINE__;
+  request_->callback.Run("", ClawerRequest::TIMEOUT);
+  SetIdle(true);
 }
 
 bool Clawer::OnMessageReceived(const IPC::Message& message) {
@@ -199,6 +219,6 @@ void Clawer::OnSendMsgToClawer(const std::string& msg) {
     return;
   }
 
-  request_->callback.Run(msg);
-  SetClawerToIdle();
+  request_->callback.Run(msg, ClawerRequest::NOERROR);
+  SetIdle(true);
 }

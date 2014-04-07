@@ -4,7 +4,6 @@
 #include "clawer_driver/src/clawer.h"
 #include "clawer_driver/src/clawer_driver_browser_main_parts.h"
 #include "clawer_driver/src/clawer_manager.h"
-#include "clawer_driver/src/clawer_request.h"
 #include "content/public/browser/browser_thread.h"
 #include "dbus/bus.h"
 #include "dbus/message.h"
@@ -176,17 +175,22 @@ void ClawerDriverService::GetHTML(
 void ClawerDriverService::ReturnHTML(
     dbus::MethodCall* method_call,
     dbus::ExportedObject::ResponseSender response_sender,
-    const std::string& html_str) {
+    const std::string& html_str,
+    const ClawerRequest::Error error) {
   if (dbus_message_loop_ != base::MessageLoop::current()) {
     dbus_message_loop_->PostTask(
         FROM_HERE,
         base::Bind(&ClawerDriverService::ReturnHTML,
                    base::Unretained(this),
-                   method_call, response_sender, html_str));
+                   method_call, response_sender, html_str, error));
     return;
   }
 
   CHECK(dbus_message_loop_ == base::MessageLoop::current());
+  if (error != ClawerRequest::NOERROR)
+    return SendErrorResponse(method_call, response_sender,
+                             kClawerManagerError,
+                             ClawerRequest::ErrorToString(error).c_str());
   scoped_ptr<dbus::Response> response =
     dbus::Response::FromMethodCall(method_call);
   dbus::MessageWriter writer(response.get());

@@ -6,6 +6,7 @@
 #include "base/memory/scoped_ptr.h"
 #include "base/threading/thread.h"
 #include "base/values.h"
+#include "clawer_driver/src/clawer_request.h"
 #include "dbus/exported_object.h"
 
 namespace base {
@@ -47,7 +48,8 @@ class ClawerDriverService : public base::Thread {
 
   void ReturnHTML(dbus::MethodCall* method_call,
                   dbus::ExportedObject::ResponseSender response_sender,
-                  const std::string& html_str);
+                  const std::string& html_str,
+                  const ClawerRequest::Error error);
 
   void SendErrorResponse(dbus::MethodCall* method_call,
                          dbus::ExportedObject::ResponseSender& response_sender,
