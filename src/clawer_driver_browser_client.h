@@ -10,9 +10,13 @@ class MainFunctionParams;
 }
 
 class ClawerDriverBrowserMainParts;
+class ClawerDriverResourceDispatcherHostDelegate;
 
 class ClawerDriverBrowserClient : public content::ShellContentBrowserClient {
  public:
+  ClawerDriverBrowserClient();
+  ~ClawerDriverBrowserClient();
+
   virtual content::BrowserMainParts* CreateBrowserMainParts(
       const content::MainFunctionParams& parameters) OVERRIDE;
 
@@ -20,8 +24,12 @@ class ClawerDriverBrowserClient : public content::ShellContentBrowserClient {
       content::BrowserContext* content_browser_context,
       content::ProtocolHandlerMap* protocol_handlers) OVERRIDE;
 
+  virtual void ResourceDispatcherHostCreated() OVERRIDE;
+
  private:
   ClawerDriverBrowserMainParts* main_parts_;
+  scoped_ptr<ClawerDriverResourceDispatcherHostDelegate>
+      resource_dispatcher_host_delegate_;
 };
 
 #endif

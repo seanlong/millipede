@@ -45,6 +45,8 @@
         'src/clawer_driver_main_delegate.h',
         'src/clawer_driver_renderer_client.cc',
         'src/clawer_driver_renderer_client.h',
+        'src/clawer_driver_resource_dispatcher_host_delegate.cc',
+        'src/clawer_driver_resource_dispatcher_host_delegate.h',
         'src/clawer_manager.cc',
         'src/clawer_manager.h',
         'src/main.cc',

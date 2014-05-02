@@ -1,5 +1,13 @@
 #include "clawer_driver/src/clawer_driver_main_delegate.h"
 
+#include "clawer_driver/src/clawer_driver_browser_client.h"
+#include "clawer_driver/src/clawer_driver_renderer_client.h"
+
+ClawerDriverMainDelegate::ClawerDriverMainDelegate() {
+}
+
+ClawerDriverMainDelegate::~ClawerDriverMainDelegate() {
+}
 
 content::ContentBrowserClient*
 ClawerDriverMainDelegate::CreateContentBrowserClient() {
