@@ -55,8 +55,10 @@ bool Clawer::IsIdle() const {
 }
 
 void Clawer::HandleRequest(linked_ptr<ClawerRequest> request) {
-  if (request_ != NULL)
-    LOG(WARNING) << "request received when clawer is not idle";
+  if (request_ != NULL) {
+    LOG(ERROR) << "request received when clawer is not idle";
+    return;
+  }
 
   //LOG(INFO) << __LINE__ << " " << request->url.spec();
   SetIdle(false);
@@ -214,11 +216,7 @@ bool Clawer::OnMessageReceived(const IPC::Message& message) {
 }
 
 void Clawer::OnSendMsgToClawer(const std::string& msg) {
-  if (request_ == NULL) {
-    LOG(WARNING) << "message received when clawer is idle: " << msg;
-    return;
-  }
-
+  CHECK(request_);
   request_->callback.Run(msg, ClawerRequest::NOERROR);
   SetIdle(true);
 }
